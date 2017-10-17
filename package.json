@@ -1,0 +1,20 @@
+{
+  "name": "rx-thunk-subject",
+  "version": "1.0.0",
+  "description": "thunk subject",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "tsc && node ./dist/test.js",
+    "prepare": "tsc"
+  },
+  "author": "Rafael Salguero Iturrios <rafaelsalgueroiturrios@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "expect": "^21.2.1",
+    "rxjs": "^5.4.3"
+  },
+  "devDependencies": {
+    "@types/expect": "^1.20.2"
+  }
+}
