@@ -8,15 +8,12 @@ class ThunkSubjectClass<T>
         this.thunk = thunk;
     }
     private thunk: () => Promise<T>;
-    /**True si aun no ha ocurrido la primera subscripción */
-    private get firstSubscription() {
-        return this.observers.length == 0;
-    }
+    private firstCall:boolean = true;
+
 
     protected _subscribe(o: rx.Subscriber<T | Promise<T>>) {
-        if (this.firstSubscription) {
-            this.next(this.thunk());
-        }
+        //Force the first value to be getted
+        this.lastValue();
         return super._subscribe(o);
     }
 
@@ -27,6 +24,18 @@ class ThunkSubjectClass<T>
     /**Refresh the subject value with a promise value*/
     refresh() {
         super.next(this.thunk());
+    }
+
+    /**Gets the last value of the thunk subject */
+    lastValue() : T | Promise<T> {
+        if (this.firstCall) {
+            const value = this.thunk();
+            this.next(value);
+            this.firstCall = false;
+            return value;
+        } else {
+            return this.value;
+        }
     }
 
     /**Refresh the subject value with a non- */
