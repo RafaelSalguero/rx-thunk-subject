@@ -1,6 +1,8 @@
 # rx-thunk-subject
 An rx subject from an async thunk.
-The thunk is not executed until the first subscription is done
+- The thunk is not executed until the first subscription is done
+- The value can be invalidated for refreshing existing subscribers values
+- Useful for managing chaging values from the server
 
 ## Create a `ThunkSubject` from an async thunk
 ```js
@@ -28,6 +30,7 @@ data.subscribe(otherHandler);
 
 ## Refresh your data
 ```js
-//The query function is called, all subscribers get the new value
-data.refresh();
+//The query function is called if there are any subscribers, all subscribers get the new value
+//If there isn't any subscribers, the function is called on the next subscription
+data.invalidate();
 ```
