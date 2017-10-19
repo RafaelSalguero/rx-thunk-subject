@@ -76,7 +76,7 @@ export interface ThunkSubject<T> extends rx.Observable<T | Promise<T>> {
     /**If there are any subscriptions, evaluate the thunk immediatly and pass the promise value to the subscribers, 
      * if there isn't any subscriptions, mark the subject as invalid and executes the thunk on the next subscription.
      * Subscribers will receive the promise of the value */
-    invalidate();
+    invalidate() : void;
     /**If there are any subscriptions, evaluate the thunk, await the result pass the promise value to the subscribers, 
      * if there isn't any subscriptions, mark the subject as invalidAsync and executes then awaits the thunk on the next subscription.
      * Subscribers will receive the solved value */
