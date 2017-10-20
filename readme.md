@@ -3,6 +3,7 @@ An rx subject from an async thunk.
 - The thunk is not executed until the first subscription is done
 - The value can be invalidated for refreshing existing subscribers values
 - Useful for managing chaging values from the server
+- Subscribers only need to manage sync values
 
 ## Create a `ThunkSubject` from an async thunk
 ```js
@@ -16,7 +17,7 @@ const data = new ThunkSubject(query);
 
 ## Subscribe to your data
 ```js
-function handleData(value: Data | Promise<Data>) {
+function handleData(value: Data) {
     //handle your data.
 }
 
