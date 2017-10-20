@@ -53,19 +53,27 @@ async function testThunk() {
     }
 
     //creamos 2 subscriptores:
-    let subA: number | Promise<number> = 0;
-    let subB: number | Promise<number> = 0;
+    let subA = 0;
+    let subB = 0;
 
     const subscriptionA = subject.subscribe(x => subA = x);
     const subscriptionB = subject.subscribe(x => subB = x);
 
+    //Inicialmente no tienen el valor:
+    expect(subA).toBe(0);
+    expect(subB).toBe(0);
+    expect(counter).toBe(llamadas);
+
+    //nos esperamos a que se termine de ejecutar la funcion
+    await delay(150);
+    
     //Obtienen el valor anterior, que es la promesa con el 1:
-    expect(await subA).toBe(1);
-    expect(await subB).toBe(1);
+    expect(subA).toBe(1);
+    expect(subB).toBe(1);
     expect(counter).toBe(llamadas);
 
     //actualizamos el valor del subject con un valor que no es una promesa
-    await subject.invalidateAsync();
+    await subject.invalidate();
     expect(counter).toBe(llamadas);
 
     expect(subA).toBe(2);
@@ -73,19 +81,22 @@ async function testThunk() {
 
     //actualizamos el valor del subject con uno que es una promesa:
     subject.invalidate();
-    expect(await subA).toBe(3);
-    expect(await subB).toBe(3);
+
+    await delay(150);
+
+    expect(subA).toBe(3);
+    expect(subB).toBe(3);
     expect(counter).toBe(llamadas);
 
     //Eliminamos la subscriptionB
     subscriptionB.unsubscribe();
 
     //Actualizamos el valor de subject, sólo debe de actualizar subA
-    await subject.invalidateAsync();
+    await subject.invalidate();
     expect(counter).toBe(llamadas);
 
-    expect(await subA).toBe(4);
-    expect(await subB).toBe(3);
+    expect(subA).toBe(4);
+    expect(subB).toBe(3);
     expect(counter).toBe(llamadas);
 
     //Eliminamos la subscripcionA
@@ -93,7 +104,7 @@ async function testThunk() {
     expect(counter).toBe(llamadas);
 
     //Agregamos de nuevo la subscripcionA
-    let subC: number | Promise<number> = 0;
+    let subC = 0;
     const subscriptionC = subject.subscribe(x => subC = x);
 
     //Debe de agarrar el valor anterior:
@@ -101,7 +112,8 @@ async function testThunk() {
     expect(counter).toBe(llamadas);
 
     //Invalidamos el valor
-    await subject.invalidateAsync();
+    await subject.invalidate();
+
     expect(counter).toBe(llamadas);
 
     //Se regeneró el valor
@@ -112,31 +124,38 @@ async function testThunk() {
     subscriptionC.unsubscribe();
 
     expect(llamadas).toBe(5);
-    subject.invalidate();
+    await subject.invalidate();
     //No realiza ninguna llamada ya que no hay subscriptores:
     expect(llamadas).toBe(5);
 
     //Agregamos un subscriptor, el cual va a generar una llamada ya que se marco como invalido el valor
-    let subD: number | Promise<number> = 0;
+    let subD = 0;
     const subscriptionD = subject.subscribe(x => subD = x);
+
+    //Probemos el current, debe de tener la espera y el valor
+    expect(await subject.current()).toBe(6);
+
     //Al tener el nuevo subscriptor recibimos la llamada
     expect(llamadas).toBe(6);
-    expect(await subD).toBe(6);
+    expect(subD).toBe(6);
 
     subscriptionD.unsubscribe();
 
     //Realizamos el invalidado asincronom sin subscriptores, lo que ocasionará que no se realize la llamada hasta que se subcriba uno, pero el siguiente subscriptor tendra el valor tal cual, no la promesa sin resolver
     expect(llamadas).toBe(6);
-    await subject.invalidateAsync();
+    await subject.invalidate();
     //No realiza ninguna llamada ya que no hay subscriptores:
     expect(llamadas).toBe(6);
 
-    let subF: number | Promise<number> = 0;
+    let subF = 0;
     const subscriptionF = subject.subscribe(x => subF = x);
+    
+    await delay(150);
+
     //Al entrar el subscriptor realizó la llamada
     expect(llamadas).toBe(7);
     //Al subscriptor se le dio el valor anterior, ya que el nuevo valor aún se esta calculando
-    expect(await subF).toBe(6);
+    expect(subF).toBe(6);
 
     //esperamos a que termine 
     await delay(150);

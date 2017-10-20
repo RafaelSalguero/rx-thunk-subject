@@ -1,34 +1,30 @@
 import * as rx from "rxjs";
 
-type ThunkState = "valid" | "invalid" | "invalidAsync";
+type ThunkState = "valid" | "invalid" | "running";
 /**A subject that execute the given thunk on the first subscription */
 class ThunkSubjectClass<T>
-    extends rx.BehaviorSubject<T | Promise<T>>
+    extends rx.Subject<T>
     implements ThunkSubject<T> {
     constructor(thunk: () => Promise<T>) {
-        super(null as any);
+        super();
         this.thunk = thunk;
     }
     private thunk: () => Promise<T>;
     private state: ThunkState = "invalid";
+    /**Almacena la promesa del valor actual */
+    private currentValue: Promise<T> | undefined = undefined;
     /**Version de la ultima invalidación del cache */
     private invalidAsyncVersion: number = 0;
 
-    protected _subscribe(o: rx.Subscriber<T | Promise<T>>) {
+    protected _subscribe(o: rx.Subscriber<T>) {
         //Force the first value to be getted
         this.refreshValidation(true);
         return super._subscribe(o);
     }
 
 
-    /**Refresh the subject value with a promise value if there are any subscriptors*/
-    invalidate() {
+    async invalidate() {
         this.state = "invalid";
-        this.refreshValidation(false);
-    }
-
-    async invalidateAsync() {
-        this.state = "invalidAsync";
         await this.refreshValidation(false);
     }
 
@@ -38,27 +34,23 @@ class ThunkSubjectClass<T>
      */
     private async refreshValidation(force: boolean) {
         if (this.observers.length > 0 || force) {
-            switch(this.state) {
+            switch (this.state) {
                 case "invalid":
-                    this.forceValidateSync();
-                    break;
-                case "invalidAsync":
                     await this.forceValidateAsync();
                     break;
             }
         }
     }
 
-    private forceValidateSync() {
-        const value = this.thunk();
-        this.next(value);
-        this.state = "valid";
-    }
-
+    /**
+     * Force the execution of the thunk and updates the currentValue field
+     */
     private async forceValidateAsync() {
         const version = Math.random();
         this.invalidAsyncVersion = version;
-        const value = await this.thunk();
+        this.state = "running";
+        this.currentValue = this.thunk();
+        const value = await this.currentValue;
 
         //checamos que la version del cache invalidado continue siendo la misma
         if (this.invalidAsyncVersion == version) {
@@ -67,20 +59,29 @@ class ThunkSubjectClass<T>
         }
     }
 
+    async current(): Promise<T> {
+        if (this.currentValue) {
+            return this.currentValue;
+        } else {
+            this.forceValidateAsync();
+            return this.currentValue!;
+        }
+    }
 }
 
 /**
 /**A subject that execute the given thunk on the first subscription 
  */
-export interface ThunkSubject<T> extends rx.Observable<T | Promise<T>> {
-    /**If there are any subscriptions, evaluate the thunk immediatly and pass the promise value to the subscribers, 
-     * if there isn't any subscriptions, mark the subject as invalid and executes the thunk on the next subscription.
-     * Subscribers will receive the promise of the value */
-    invalidate() : void;
+export interface ThunkSubject<T> extends rx.Observable<T> {
     /**If there are any subscriptions, evaluate the thunk, await the result pass the promise value to the subscribers, 
      * if there isn't any subscriptions, mark the subject as invalidAsync and executes then awaits the thunk on the next subscription.
      * Subscribers will receive the solved value */
-    invalidateAsync(): Promise<void>;
+    invalidate(): Promise<void>;
+
+    /**
+     * Get the current value as a promise. If the thunk has never been called this calls the thunk and return the thunk promise
+     */
+    current(): Promise<T>;
 }
 
 /**
