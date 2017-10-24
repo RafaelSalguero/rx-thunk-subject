@@ -1,6 +1,6 @@
 import * as rx from "rxjs";
 
-type ThunkState = "valid" | "invalid" | "running";
+type ThunkState = "valid" | "invalid" | "running" | "error";
 /**A subject that execute the given thunk on the first subscription */
 class ThunkSubjectClass<T>
     extends rx.Subject<T>
@@ -12,13 +12,19 @@ class ThunkSubjectClass<T>
     private thunk: () => Promise<T>;
     private state: ThunkState = "invalid";
     /**Almacena la promesa del valor actual */
-    private currentValue: Promise<T> | undefined = undefined;
+    private currentPromise: Promise<T> | undefined = undefined;
+    /**Valor actual, sólo es valido si hasCurrentValue */
+    private currentValue: T | undefined = undefined;
+    private hasCurrentValue: boolean = false;
     /**Version de la ultima invalidación del cache */
     private invalidAsyncVersion: number = 0;
 
     protected _subscribe(o: rx.Subscriber<T>) {
         //Force the first value to be getted
         this.refreshValidation(true);
+        if (this.hasCurrentValue) {
+            o.next(this.currentValue!);
+        }
         return super._subscribe(o);
     }
 
@@ -49,22 +55,30 @@ class ThunkSubjectClass<T>
         const version = Math.random();
         this.invalidAsyncVersion = version;
         this.state = "running";
-        this.currentValue = this.thunk();
-        const value = await this.currentValue;
+        try {
+            this.currentPromise = this.thunk();
+            const value = await this.currentPromise;
 
-        //checamos que la version del cache invalidado continue siendo la misma
-        if (this.invalidAsyncVersion == version) {
-            this.next(value);
-            this.state = "valid";
+            //checamos que la version del cache invalidado continue siendo la misma
+            if (this.invalidAsyncVersion == version) {
+                this.currentValue = value;
+                this.hasCurrentValue = true;
+                this.next(value);
+                this.state = "valid";
+            }
+        } catch (error) {
+            this.state = "error";
+            this.error(error);
         }
+
     }
 
     async current(): Promise<T> {
-        if (this.currentValue) {
-            return this.currentValue;
+        if (this.currentPromise) {
+            return this.currentPromise;
         } else {
             this.forceValidateAsync();
-            return this.currentValue!;
+            return this.currentPromise!;
         }
     }
 }
