@@ -1,8 +1,8 @@
 # rx-thunk-subject
 An rx subject from an async thunk.
 - The thunk is not executed until the first subscription is done
-- The value can be invalidated for refreshing existing subscribers values
-- Useful for managing chaging values from the server
+- The value can be invalidated thus refreshing existing subscribers values
+- Useful for managing changing values from the server
 - Subscribers only need to manage sync values
 
 ## Create a `ThunkSubject` from an async thunk

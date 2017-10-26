@@ -63,8 +63,8 @@ class ThunkSubjectClass<T>
             if (this.invalidAsyncVersion == version) {
                 this.currentValue = value;
                 this.hasCurrentValue = true;
-                this.next(value);
                 this.state = "valid";
+                this.next(value);
             }
         } catch (error) {
             this.state = "error";

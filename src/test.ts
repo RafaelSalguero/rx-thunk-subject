@@ -24,18 +24,29 @@ async function testThunk() {
 
 (async () => {
     {
+        console.log("Probar que una segunda subscripcion en un onNext obtenga el valor anteriormente calculado");
+        const thunk = async () => "Hola";
+        const subject = thunkSubject(thunk);
+
+        let secondary: string = "";
+        const primarySubscription = subject.subscribe(() => subject.subscribe(value => secondary = value ) );
+        await delay(0);
+
+        expect(secondary).toBe("Hola");
+    }
+    {
         console.log("Probar que el subject entregue el valor inicial a los nuevos subscriptores");
         const thunk = async () => "Hola";
         const subject = thunkSubject(thunk);
 
         let sub1;
         subject.subscribe(value => sub1 = value);
-        await delay(10);
+        await delay(0);
         expect(sub1).toEqual("Hola");
 
         let sub2;
         subject.subscribe(value => sub2 = value);
-        await delay(10);
+        await delay(0);
         expect(sub2).toEqual("Hola");
     }
     {
