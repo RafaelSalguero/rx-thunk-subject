@@ -173,8 +173,8 @@ async function testThunk() {
 
         //Al entrar el subscriptor realizó la llamada
         expect(llamadas).toBe(7);
-        //Al subscriptor se le dio el valor anterior, ya que el nuevo valor aún se esta calculando
-        expect(subF).toBe(6);
+        //Al subscriptor no se le dio el valor anterior, ya que el nuevo valor aún se esta calculando
+        expect(subF).toBe(0);
         
         await delay(150);
         //La cantidad de llamadas es la misma, solo que el valor de la llamada anterior ya esta listo

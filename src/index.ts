@@ -22,7 +22,7 @@ class ThunkSubjectClass<T>
     protected _subscribe(o: rx.Subscriber<T>) {
         //Force the first value to be getted
         this.refreshValidation(true);
-        if (this.hasCurrentValue) {
+        if (this.hasCurrentValue && this.state != "running") {
             o.next(this.currentValue!);
         }
         return super._subscribe(o);
@@ -87,9 +87,11 @@ class ThunkSubjectClass<T>
 /**A subject that execute the given thunk on the first subscription 
  */
 export interface ThunkSubject<T> extends rx.Observable<T> {
-    /**If there are any subscriptions, evaluate the thunk, await the result pass the promise value to the subscribers, 
+    /**
+     * Force the reevaluation of the thunk function
+     * If there are any subscriptions, evaluate the thunk, await the result pass the promise value to the subscribers, 
      * if there isn't any subscriptions, mark the subject as invalidAsync and executes then awaits the thunk on the next subscription.
-     * Subscribers will receive the solved value */
+     * Subscribers will receive the new fresh solved value */
     invalidate(): Promise<void>;
 
     /**
