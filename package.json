@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "tsc && node ./dist/test.js",
-    "prepare": "tsc"
+    "prepare": "tsc",
+    "pretest": "tsc"
   },
   "author": "Rafael Salguero Iturrios <rafaelsalgueroiturrios@gmail.com>",
   "license": "MIT",

@@ -24,12 +24,30 @@ async function testThunk() {
 
 (async () => {
     {
+        console.log("Probar que funciona el operador del mapeo");
+        const thunk1 = () => delay(100).then(x => "Hola");
+        const thunk2 = () => delay(1000).then(x => "Rafa");
+        const subject1 = thunkSubject(thunk1);
+        const subject2 = thunkSubject(thunk2);
+        const obs = rx.Observable.combineLatest(subject1, subject2).map(x => x[0] + " " + x[1]);
+
+        let r1;
+        obs.subscribe(value => {
+            r1 = value;   
+        });
+        await delay(500);
+        expect(r1).toBe(undefined);
+        
+        await delay(1200);
+        expect(r1).toBe("Hola Rafa");
+    }
+    {
         console.log("Probar que una segunda subscripcion en un onNext obtenga el valor anteriormente calculado");
         const thunk = async () => "Hola";
         const subject = thunkSubject(thunk);
 
         let secondary: string = "";
-        const primarySubscription = subject.subscribe(() => subject.subscribe(value => secondary = value ) );
+        const primarySubscription = subject.subscribe(() => subject.subscribe(value => secondary = value));
         await delay(0);
 
         expect(secondary).toBe("Hola");
@@ -54,7 +72,6 @@ async function testThunk() {
         const subject = thunkSubject(testThunk);
         //Antes de llamar al testThunk no se ha aumentado el counter
         expect(llamadas).toBe(0);
-
         //Si llamamos al refresh no se llama al testThunk, ya que no hay ningun subscriptor
         subject.invalidate();
         expect(llamadas).toBe(0);
@@ -186,7 +203,7 @@ async function testThunk() {
         expect(llamadas).toBe(7);
         //Al subscriptor no se le dio el valor anterior, ya que el nuevo valor aún se esta calculando
         expect(subF).toBe(0);
-        
+
         await delay(150);
         //La cantidad de llamadas es la misma, solo que el valor de la llamada anterior ya esta listo
         expect(llamadas).toBe(7);
