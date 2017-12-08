@@ -28,7 +28,7 @@ export class ThunkSubjectClassMemo<T>
         return super._subscribe(o);
     }
 
-    async invalidate() {
+    invalidate = async () => {
         this.state = "invalid";
         await this.refreshValidation(false);
     }
@@ -72,7 +72,7 @@ export class ThunkSubjectClassMemo<T>
 
     }
 
-    async current(): Promise<T> {
+    current = async (): Promise<T> => {
         if (this.currentPromise) {
             return this.currentPromise;
         } else {

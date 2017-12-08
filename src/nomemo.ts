@@ -17,11 +17,12 @@ export class ThunkSubjectClassNoMemo<T>
         return super._subscribe(o);
     }
 
-    async invalidate() {
-        this.next(await this.thunk());
+    invalidate = async () => {
+        const ret = await this.thunk();
+        this.next(ret);
     }
 
-    async current(): Promise<T> {
+    current = async (): Promise<T> => {
         return await this.thunk();
     }
 }
