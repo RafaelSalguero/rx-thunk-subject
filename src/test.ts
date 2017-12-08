@@ -1,4 +1,4 @@
-import { thunkSubject } from "./index";
+import { thunkSubjectMemo, thunkSubject } from "./index";
 import * as expect from "expect";
 import * as rx from "rxjs";
 function delay(ms: number) {
@@ -22,29 +22,90 @@ async function testThunk() {
 }
 
 
+
+
 (async () => {
+    /************************************************ */
+    /**Probar ThunkNoMemo */
+    /************************************************ */
+    {
+        console.log("Probar thunk NO memo");
+        const sub = thunkSubject(testThunk);
+        expect(llamadas).toBe(0);
+
+        let sub1Counter = 0;
+        let sub2Counter = 0;
+        const sub1 = sub.subscribe(() => sub1Counter++);
+
+        expect(llamadas).toBe(1);
+        expect(sub1Counter).toBe(0);
+        expect(counter).toBe(0);
+
+        const sub2 = sub.subscribe(() => sub2Counter++);
+
+        expect(llamadas).toBe(2);
+        expect(counter).toBe(0);
+        expect(sub2Counter).toBe(0);
+
+        await delay(300);
+
+        expect(counter).toBe(2);
+        expect(sub1Counter).toBe(1);
+        expect(sub2Counter).toBe(1);
+
+        sub.invalidate();
+
+        expect(llamadas).toBe(3);
+        expect(counter).toBe(2);
+        expect(sub1Counter).toBe(1);
+        expect(sub2Counter).toBe(1);
+
+        await delay(300);
+        
+        
+        expect(llamadas).toBe(3);
+        expect(counter).toBe(3);
+        expect(sub1Counter).toBe(2);
+        expect(sub2Counter).toBe(2);
+
+        await sub.invalidate();
+
+        expect(llamadas).toBe(4);
+        expect(counter).toBe(4);
+        expect(sub1Counter).toBe(3);
+        expect(sub2Counter).toBe(3);
+    }
+
+
+    /************************************************ */
+    /**Probar ThunkMemo */
+    /************************************************ */
+
+    counter = 0;
+    llamadas = 0;
+
     {
         console.log("Probar que funciona el operador del mapeo");
         const thunk1 = () => delay(100).then(x => "Hola");
         const thunk2 = () => delay(1000).then(x => "Rafa");
-        const subject1 = thunkSubject(thunk1);
-        const subject2 = thunkSubject(thunk2);
+        const subject1 = thunkSubjectMemo(thunk1);
+        const subject2 = thunkSubjectMemo(thunk2);
         const obs = rx.Observable.combineLatest(subject1, subject2).map(x => x[0] + " " + x[1]);
 
         let r1;
         obs.subscribe(value => {
-            r1 = value;   
+            r1 = value;
         });
         await delay(500);
         expect(r1).toBe(undefined);
-        
+
         await delay(1200);
         expect(r1).toBe("Hola Rafa");
     }
     {
         console.log("Probar que una segunda subscripcion en un onNext obtenga el valor anteriormente calculado");
         const thunk = async () => "Hola";
-        const subject = thunkSubject(thunk);
+        const subject = thunkSubjectMemo(thunk);
 
         let secondary: string = "";
         const primarySubscription = subject.subscribe(() => subject.subscribe(value => secondary = value));
@@ -55,7 +116,7 @@ async function testThunk() {
     {
         console.log("Probar que el subject entregue el valor inicial a los nuevos subscriptores");
         const thunk = async () => "Hola";
-        const subject = thunkSubject(thunk);
+        const subject = thunkSubjectMemo(thunk);
 
         let sub1;
         subject.subscribe(value => sub1 = value);
@@ -69,7 +130,7 @@ async function testThunk() {
     }
     {
         console.log("Probar que testThunk sólo sea llamado cuando existan subscriptores vigentes");
-        const subject = thunkSubject(testThunk);
+        const subject = thunkSubjectMemo(testThunk);
         //Antes de llamar al testThunk no se ha aumentado el counter
         expect(llamadas).toBe(0);
         //Si llamamos al refresh no se llama al testThunk, ya que no hay ningun subscriptor
